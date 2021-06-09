@@ -1,0 +1,80 @@
+C51 COMPILER V9.60.0.0   TEST                                                              06/08/2021 21:45:04 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE TEST
+OBJECT MODULE PLACED IN .\Output\test.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE test.c OPTIMIZE(8,SPEED) BROWSE INCDIR(C:\Documents and Settings\prku\De
+                    -sktop\UART Debug\) DEBUG OBJECTEXTEND PRINT(.\Output\test.lst) TABS(2) OBJECT(.\Output\test.obj)
+
+line level    source
+
+   1          #include <stdbool.h>
+*** WARNING C318 IN LINE 1 OF test.c: can't open file 'stdbool.h'
+   2          #include <stdio.h>
+   3          
+   4          _sfr _at(0x80) IOA;
+*** ERROR C129 IN LINE 4 OF test.c: missing ';' before '_at'
+   5          __sfr __at(0xb2) OEA;
+   6          
+   7          __sfr __at(0x88) TCON;
+   8          __sfr __at(0x89) TMOD;
+   9          __sfr __at(0x8b) TL1;
+  10          __sfr __at(0x8d) TH1;
+  11          
+  12          __sfr __at(0xa8) IE;
+  13          
+  14          volatile unsigned char sendcounter;
+  15          volatile unsigned int senddata;
+  16          volatile _Bool sending;
+  17          
+  18          void send_bit(void) __interrupt(3) {
+  19              TH1 = (65536 - 833) / 256;
+  20              TL1 = (65536 - 833) % 256;
+  21          
+  22              if (!sending)
+  23                  return;
+  24          
+  25              IOA = senddata & 1;
+  26              senddata >>= 1;
+  27          
+  28              if (!--sendcounter)   {
+  29                  sending = false;
+  30                  IE &= ~0x08;
+  31                  }
+  32              }
+  33          
+  34          int putchar(int c) {
+  35              while (sending);
+  36          
+  37              senddata = (c << 1) | 0x200;
+  38          
+  39              sendcounter = 10;
+  40          
+  41              sending = true;
+  42              IE |= 0x08;
+  43          
+  44              return (c);
+  45              }
+  46          
+  47          void main(void) {
+  48              unsigned long int i = 0;
+  49          
+  50              // Configure timer for 1200 baud
+  51              TH1 = (65536 - 833) / 256;
+  52              TL1 = (65536 - 833) % 256;
+C51 COMPILER V9.60.0.0   TEST                                                              06/08/2021 21:45:04 PAGE 2   
+
+  53              TMOD = 0x10;
+  54              IE |= 0x80;
+  55              TCON |= 0x40; // Start timer
+  56          
+  57              OEA = 0x01; // port A as output
+  58          
+  59          
+  60              for (;;)  {
+  61                  printf("Hello World!\n");
+  62                  for (i = 0; i < 147456; i++); // Sleep
+  63                  }
+  64              }
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  1 ERROR(S)

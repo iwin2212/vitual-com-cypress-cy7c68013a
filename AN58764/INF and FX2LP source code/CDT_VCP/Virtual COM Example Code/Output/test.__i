@@ -1,0 +1,1 @@
+"test.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(C:\Documents and Settings\prku\Desktop\UART Debug\) DEBUG OBJECTEXTEND PRINT(.\Output\test.lst) TABS (2) OBJECT(.\Output\test.obj)
