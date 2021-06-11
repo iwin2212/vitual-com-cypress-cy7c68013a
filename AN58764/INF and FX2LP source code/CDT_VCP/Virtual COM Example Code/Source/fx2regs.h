@@ -17,18 +17,18 @@
 // FX2/FX2LP/FX1 Related Register Assignments
 //-----------------------------------------------------------------------------
 
-// The Ez-USB FX2/FX2LP/FX1 registers are defined here. We use fx2regs.h for register 
-// address allocation by using "#define ALLOCATE_EXTERN". 
-// When using "#define ALLOCATE_EXTERN", you get (for instance): 
+// The Ez-USB FX2/FX2LP/FX1 registers are defined here. We use fx2regs.h for register
+// address allocation by using "#define ALLOCATE_EXTERN".
+// When using "#define ALLOCATE_EXTERN", you get (for instance):
 // xdata volatile BYTE OUT7BUF[64]   _at_   0x7B40;
-// Such lines are created from FX2.h by using the preprocessor. 
-// Incidently, these lines will not generate any space in the resulting hex 
-// file; they just bind the symbols to the addresses for compilation. 
-// You just need to put "#define ALLOCATE_EXTERN" in your main program file; 
-// i.e. fw.c or a stand-alone C source file. 
-// Without "#define ALLOCATE_EXTERN", you just get the external reference: 
+// Such lines are created from FX2.h by using the preprocessor.
+// Incidently, these lines will not generate any space in the resulting hex
+// file; they just bind the symbols to the addresses for compilation.
+// You just need to put "#define ALLOCATE_EXTERN" in your main program file;
+// i.e. fw.c or a stand-alone C source file.
+// Without "#define ALLOCATE_EXTERN", you just get the external reference:
 // extern xdata volatile BYTE OUT7BUF[64]   ;//   0x7B40;
-// This uses the concatenation operator "##" to insert a comment "//" 
+// This uses the concatenation operator "##" to insert a comment "//"
 // to cut off the end of the line, "_at_   0x7B40;", which is not wanted.
 
 #ifdef ALLOCATE_EXTERN
@@ -232,10 +232,10 @@ EXTERN xdata volatile BYTE FLOWLOGIC         _AT_  0xE6C7; //Defines flow/hold d
 EXTERN xdata volatile BYTE FLOWEQ0CTL        _AT_  0xE6C8; //CTL states during active flow state
 EXTERN xdata volatile BYTE FLOWEQ1CTL        _AT_  0xE6C9; //CTL states during hold flow state
 EXTERN xdata volatile BYTE FLOWHOLDOFF       _AT_  0xE6CA;
-EXTERN xdata volatile BYTE FLOWSTB           _AT_  0xE6CB; //CTL/RDY Signal to use as master data strobe 
+EXTERN xdata volatile BYTE FLOWSTB           _AT_  0xE6CB; //CTL/RDY Signal to use as master data strobe
 EXTERN xdata volatile BYTE FLOWSTBEDGE       _AT_  0xE6CC; //Defines active master strobe edge
 EXTERN xdata volatile BYTE FLOWSTBHPERIOD    _AT_  0xE6CD; //Half Period of output master strobe
-EXTERN xdata volatile BYTE GPIFHOLDAMOUNT    _AT_  0xE60C; //Data delay shift 
+EXTERN xdata volatile BYTE GPIFHOLDAMOUNT    _AT_  0xE60C; //Data delay shift
 EXTERN xdata volatile BYTE UDMACRCH          _AT_  0xE67D; //CRC Upper byte
 EXTERN xdata volatile BYTE UDMACRCL          _AT_  0xE67E; //CRC Lower byte
 EXTERN xdata volatile BYTE UDMACRCQUAL       _AT_  0xE67F; //UDMA In only, host terminated use only
@@ -244,7 +244,7 @@ EXTERN xdata volatile BYTE UDMACRCQUAL       _AT_  0xE67F; //UDMA In only, host 
 // Debug/Test
 // The following registers are for Cypress's internal testing purposes only.
 // These registers are not documented in the datasheet or the Technical Reference
-// Manual as they were not designed for end user application usage 
+// Manual as they were not designed for end user application usage
 EXTERN xdata volatile BYTE DBUG              _AT_ 0xE6F8;  // Debug
 EXTERN xdata volatile BYTE TESTCFG           _AT_ 0xE6F9;  // Test configuration
 EXTERN xdata volatile BYTE USBTEST           _AT_ 0xE6FA;  // USB Test Modes
@@ -283,100 +283,100 @@ EXTERN xdata volatile BYTE GPCR2             _AT_ 0xE50D;  // Chip Features
 /*-----------------------------------------------------------------------------
    Special Function Registers (SFRs)
    The byte registers and bits defined in the following list are based
-   on the Synopsis definition of the 8051 Special Function Registers for EZ-USB. 
-    If you modify the register definitions below, please regenerate the file 
+   on the Synopsis definition of the 8051 Special Function Registers for EZ-USB.
+    If you modify the register definitions below, please regenerate the file
     "ezregs.inc" which includes the same basic information for assembly inclusion.
 -----------------------------------------------------------------------------*/
 
 sfr IOA     = 0x80;
-         /*  IOA  */
-         sbit PA0    = 0x80 + 0;
-         sbit PA1    = 0x80 + 1;
-         sbit PA2    = 0x80 + 2;
-         sbit PA3    = 0x80 + 3;
+/*  IOA  */
+sbit PA0    = 0x80 + 0;
+sbit PA1    = 0x80 + 1;
+sbit PA2    = 0x80 + 2;
+sbit PA3    = 0x80 + 3;
 
-         sbit PA4    = 0x80 + 4;
-         sbit PA5    = 0x80 + 5;
-         sbit PA6    = 0x80 + 6;
-         sbit PA7    = 0x80 + 7;
+sbit PA4    = 0x80 + 4;
+sbit PA5    = 0x80 + 5;
+sbit PA6    = 0x80 + 6;
+sbit PA7    = 0x80 + 7;
 sfr SP      = 0x81;
 sfr DPL     = 0x82;
 sfr DPH     = 0x83;
 sfr DPL1    = 0x84;
 sfr DPH1    = 0x85;
 sfr DPS     = 0x86;
-         /*  DPS  */
-         // sbit SEL   = 0x86+0;
+/*  DPS  */
+// sbit SEL   = 0x86+0;
 sfr PCON    = 0x87;
-         /*  PCON  */
-         //sbit IDLE   = 0x87+0;
-         //sbit STOP   = 0x87+1;
-         //sbit GF0    = 0x87+2;
-         //sbit GF1    = 0x87+3;
-         //sbit SMOD0  = 0x87+7;
+/*  PCON  */
+//sbit IDLE   = 0x87+0;
+//sbit STOP   = 0x87+1;
+//sbit GF0    = 0x87+2;
+//sbit GF1    = 0x87+3;
+//sbit SMOD0  = 0x87+7;
 sfr TCON    = 0x88;
-         /*  TCON  */
-         sbit IT0    = 0x88+0;
-         sbit IE0    = 0x88+1;
-         sbit IT1    = 0x88+2;
-         sbit IE1    = 0x88+3;
-         sbit TR0    = 0x88+4;
-         sbit TF0    = 0x88+5;
-         sbit TR1    = 0x88+6;
-         sbit TF1    = 0x88+7;
+/*  TCON  */
+sbit IT0    = 0x88+0;
+sbit IE0    = 0x88+1;
+sbit IT1    = 0x88+2;
+sbit IE1    = 0x88+3;
+sbit TR0    = 0x88+4;
+sbit TF0    = 0x88+5;
+sbit TR1    = 0x88+6;
+sbit TF1    = 0x88+7;
 sfr TMOD    = 0x89;
-         /*  TMOD  */
-         //sbit M00    = 0x89+0;
-         //sbit M10    = 0x89+1;
-         //sbit CT0    = 0x89+2;
-         //sbit GATE0  = 0x89+3;
-         //sbit M01    = 0x89+4;
-         //sbit M11    = 0x89+5;
-         //sbit CT1    = 0x89+6;
-         //sbit GATE1  = 0x89+7;
+/*  TMOD  */
+//sbit M00    = 0x89+0;
+//sbit M10    = 0x89+1;
+//sbit CT0    = 0x89+2;
+//sbit GATE0  = 0x89+3;
+//sbit M01    = 0x89+4;
+//sbit M11    = 0x89+5;
+//sbit CT1    = 0x89+6;
+//sbit GATE1  = 0x89+7;
 sfr TL0     = 0x8A;
 sfr TL1     = 0x8B;
 sfr TH0     = 0x8C;
 sfr TH1     = 0x8D;
 sfr CKCON   = 0x8E;
-         /*  CKCON  */
-         //sbit MD0    = 0x89+0;
-         //sbit MD1    = 0x89+1;
-         //sbit MD2    = 0x89+2;
-         //sbit T0M    = 0x89+3;
-         //sbit T1M    = 0x89+4;
-         //sbit T2M    = 0x89+5;
+/*  CKCON  */
+//sbit MD0    = 0x89+0;
+//sbit MD1    = 0x89+1;
+//sbit MD2    = 0x89+2;
+//sbit T0M    = 0x89+3;
+//sbit T1M    = 0x89+4;
+//sbit T2M    = 0x89+5;
 sfr SPC_FNC = 0x8F; // Was WRS in Reg320
-         /*  CKCON  */
-         //sbit WRS    = 0x8F+0;
+/*  CKCON  */
+//sbit WRS    = 0x8F+0;
 sfr IOB     = 0x90;
-         /*  IOB  */
-         sbit PB0    = 0x90 + 0;
-         sbit PB1    = 0x90 + 1;
-         sbit PB2    = 0x90 + 2;
-         sbit PB3    = 0x90 + 3;
+/*  IOB  */
+sbit PB0    = 0x90 + 0;
+sbit PB1    = 0x90 + 1;
+sbit PB2    = 0x90 + 2;
+sbit PB3    = 0x90 + 3;
 
-         sbit PB4    = 0x90 + 4;
-         sbit PB5    = 0x90 + 5;
-         sbit PB6    = 0x90 + 6;
-         sbit PB7    = 0x90 + 7;
+sbit PB4    = 0x90 + 4;
+sbit PB5    = 0x90 + 5;
+sbit PB6    = 0x90 + 6;
+sbit PB7    = 0x90 + 7;
 sfr EXIF    = 0x91; // EXIF Bit Values differ from Reg320
-         /*  EXIF  */
-         //sbit USBINT = 0x91+4;
-         //sbit I2CINT = 0x91+5;
-        // sbit IE4    = 0x91+6;
-         //sbit IE5    = 0x91+7;
+/*  EXIF  */
+//sbit USBINT = 0x91+4;
+//sbit I2CINT = 0x91+5;
+// sbit IE4    = 0x91+6;
+//sbit IE5    = 0x91+7;
 sfr MPAGE  = 0x92;
 sfr SCON0  = 0x98;
-         /*  SCON0  */
-         sbit RI    = 0x98+0;
-         sbit TI    = 0x98+1;
-         sbit RB8   = 0x98+2;
-         sbit TB8   = 0x98+3;
-         sbit REN   = 0x98+4;
-         sbit SM2   = 0x98+5;
-         sbit SM1   = 0x98+6;
-         sbit SM0   = 0x98+7;
+/*  SCON0  */
+sbit RI    = 0x98+0;
+sbit TI    = 0x98+1;
+sbit RB8   = 0x98+2;
+sbit TB8   = 0x98+3;
+sbit REN   = 0x98+4;
+sbit SM2   = 0x98+5;
+sbit SM1   = 0x98+6;
+sbit SM0   = 0x98+7;
 sfr SBUF0  = 0x99;
 
 #define AUTOPTR1H AUTOPTRH1 // for backwards compatibility with examples
@@ -385,66 +385,66 @@ sfr SBUF0  = 0x99;
 #define APTR1L AUTOPTRL1 // for backwards compatibility with examples
 
 // this is how they are defined in the TRM
-sfr AUTOPTRH1     = 0x9A; 
-sfr AUTOPTRL1     = 0x9B; 
+sfr AUTOPTRH1     = 0x9A;
+sfr AUTOPTRL1     = 0x9B;
 sfr AUTOPTRH2     = 0x9D;
-sfr AUTOPTRL2     = 0x9E; 
+sfr AUTOPTRL2     = 0x9E;
 
 sfr IOC        = 0xA0;
-         /*  IOC  */
-         sbit PC0    = 0xA0 + 0;
-         sbit PC1    = 0xA0 + 1;
-         sbit PC2    = 0xA0 + 2;
-         sbit PC3    = 0xA0 + 3;
+/*  IOC  */
+sbit PC0    = 0xA0 + 0;
+sbit PC1    = 0xA0 + 1;
+sbit PC2    = 0xA0 + 2;
+sbit PC3    = 0xA0 + 3;
 
-         sbit PC4    = 0xA0 + 4;
-         sbit PC5    = 0xA0 + 5;
-         sbit PC6    = 0xA0 + 6;
-         sbit PC7    = 0xA0 + 7;
+sbit PC4    = 0xA0 + 4;
+sbit PC5    = 0xA0 + 5;
+sbit PC6    = 0xA0 + 6;
+sbit PC7    = 0xA0 + 7;
 sfr INT2CLR    = 0xA1;
 sfr INT4CLR    = 0xA2;
 
 sfr IE     = 0xA8;
-         /*  IE  */
-         sbit EX0   = 0xA8+0;
-         sbit ET0   = 0xA8+1;
-         sbit EX1   = 0xA8+2;
-         sbit ET1   = 0xA8+3;
-         sbit ES0   = 0xA8+4;
-         sbit ET2   = 0xA8+5;
-         sbit ES1   = 0xA8+6;
-         sbit EA    = 0xA8+7;
+/*  IE  */
+sbit EX0   = 0xA8+0;
+sbit ET0   = 0xA8+1;
+sbit EX1   = 0xA8+2;
+sbit ET1   = 0xA8+3;
+sbit ES0   = 0xA8+4;
+sbit ET2   = 0xA8+5;
+sbit ES1   = 0xA8+6;
+sbit EA    = 0xA8+7;
 
 sfr EP2468STAT     = 0xAA;
-         /* EP2468STAT */
-         //sbit EP2E   = 0xAA+0;
-         //sbit EP2F   = 0xAA+1;
-         //sbit EP4E   = 0xAA+2;
-         //sbit EP4F   = 0xAA+3;
-         //sbit EP6E   = 0xAA+4;
-         //sbit EP6F   = 0xAA+5;
-         //sbit EP8E   = 0xAA+6;
-         //sbit EP8F   = 0xAA+7;
+/* EP2468STAT */
+//sbit EP2E   = 0xAA+0;
+//sbit EP2F   = 0xAA+1;
+//sbit EP4E   = 0xAA+2;
+//sbit EP4F   = 0xAA+3;
+//sbit EP6E   = 0xAA+4;
+//sbit EP6F   = 0xAA+5;
+//sbit EP8E   = 0xAA+6;
+//sbit EP8F   = 0xAA+7;
 
 sfr EP24FIFOFLGS   = 0xAB;
 sfr EP68FIFOFLGS   = 0xAC;
 sfr AUTOPTRSETUP  = 0xAF;
-         /* AUTOPTRSETUP */
-         //   sbit EXTACC  = 0xAF+0;
-         //   sbit APTR1FZ = 0xAF+1;
-         //   sbit APTR2FZ = 0xAF+2;
+/* AUTOPTRSETUP */
+//   sbit EXTACC  = 0xAF+0;
+//   sbit APTR1FZ = 0xAF+1;
+//   sbit APTR2FZ = 0xAF+2;
 
 sfr IOD     = 0xB0;
-         /*  IOD  */
-         sbit PD0    = 0xB0 + 0;
-         sbit PD1    = 0xB0 + 1;
-         sbit PD2    = 0xB0 + 2;
-         sbit PD3    = 0xB0 + 3;
+/*  IOD  */
+sbit PD0    = 0xB0 + 0;
+sbit PD1    = 0xB0 + 1;
+sbit PD2    = 0xB0 + 2;
+sbit PD3    = 0xB0 + 3;
 
-         sbit PD4    = 0xB0 + 4;
-         sbit PD5    = 0xB0 + 5;
-         sbit PD6    = 0xB0 + 6;
-         sbit PD7    = 0xB0 + 7;
+sbit PD4    = 0xB0 + 4;
+sbit PD5    = 0xB0 + 5;
+sbit PD6    = 0xB0 + 6;
+sbit PD7    = 0xB0 + 7;
 sfr IOE     = 0xB1;
 sfr OEA     = 0xB2;
 sfr OEB     = 0xB3;
@@ -453,79 +453,79 @@ sfr OED     = 0xB5;
 sfr OEE     = 0xB6;
 
 sfr IP     = 0xB8;
-         /*  IP  */
-         sbit PX0   = 0xB8+0;
-         sbit PT0   = 0xB8+1;
-         sbit PX1   = 0xB8+2;
-         sbit PT1   = 0xB8+3;
-         sbit PS0   = 0xB8+4;
-         sbit PT2   = 0xB8+5;
-         sbit PS1   = 0xB8+6;
+/*  IP  */
+sbit PX0   = 0xB8+0;
+sbit PT0   = 0xB8+1;
+sbit PX1   = 0xB8+2;
+sbit PT1   = 0xB8+3;
+sbit PS0   = 0xB8+4;
+sbit PT2   = 0xB8+5;
+sbit PS1   = 0xB8+6;
 
 sfr EP01STAT    = 0xBA;
 sfr GPIFTRIG    = 0xBB;
-                
+
 sfr GPIFSGLDATH     = 0xBD;
 sfr GPIFSGLDATLX    = 0xBE;
 sfr GPIFSGLDATLNOX  = 0xBF;
 
 sfr SCON1  = 0xC0;
-         /*  SCON1  */
-         sbit RI1   = 0xC0+0;
-         sbit TI1   = 0xC0+1;
-         sbit RB81  = 0xC0+2;
-         sbit TB81  = 0xC0+3;
-         sbit REN1  = 0xC0+4;
-         sbit SM21  = 0xC0+5;
-         sbit SM11  = 0xC0+6;
-         sbit SM01  = 0xC0+7;
+/*  SCON1  */
+sbit RI1   = 0xC0+0;
+sbit TI1   = 0xC0+1;
+sbit RB81  = 0xC0+2;
+sbit TB81  = 0xC0+3;
+sbit REN1  = 0xC0+4;
+sbit SM21  = 0xC0+5;
+sbit SM11  = 0xC0+6;
+sbit SM01  = 0xC0+7;
 sfr SBUF1  = 0xC1;
 sfr T2CON  = 0xC8;
-         /*  T2CON  */
-         sbit CP_RL2 = 0xC8+0;
-         sbit C_T2  = 0xC8+1;
-         sbit TR2   = 0xC8+2;
-         sbit EXEN2 = 0xC8+3;
-         sbit TCLK  = 0xC8+4;
-         sbit RCLK  = 0xC8+5;
-         sbit EXF2  = 0xC8+6;
-         sbit TF2   = 0xC8+7;
+/*  T2CON  */
+sbit CP_RL2 = 0xC8+0;
+sbit C_T2  = 0xC8+1;
+sbit TR2   = 0xC8+2;
+sbit EXEN2 = 0xC8+3;
+sbit TCLK  = 0xC8+4;
+sbit RCLK  = 0xC8+5;
+sbit EXF2  = 0xC8+6;
+sbit TF2   = 0xC8+7;
 sfr RCAP2L = 0xCA;
 sfr RCAP2H = 0xCB;
 sfr TL2    = 0xCC;
 sfr TH2    = 0xCD;
 sfr PSW    = 0xD0;
-         /*  PSW  */
-         sbit P     = 0xD0+0;
-         sbit FL    = 0xD0+1;
-         sbit OV    = 0xD0+2;
-         sbit RS0   = 0xD0+3;
-         sbit RS1   = 0xD0+4;
-         sbit F0    = 0xD0+5;
-         sbit AC    = 0xD0+6;
-         sbit CY    = 0xD0+7;
+/*  PSW  */
+sbit P     = 0xD0+0;
+sbit FL    = 0xD0+1;
+sbit OV    = 0xD0+2;
+sbit RS0   = 0xD0+3;
+sbit RS1   = 0xD0+4;
+sbit F0    = 0xD0+5;
+sbit AC    = 0xD0+6;
+sbit CY    = 0xD0+7;
 sfr EICON  = 0xD8; // Was WDCON in DS80C320; Bit Values differ from Reg320
-         /*  EICON  */
-         sbit INT6  = 0xD8+3;
-         sbit RESI  = 0xD8+4;
-         sbit ERESI = 0xD8+5;
-         sbit SMOD1 = 0xD8+7;
+/*  EICON  */
+sbit INT6  = 0xD8+3;
+sbit RESI  = 0xD8+4;
+sbit ERESI = 0xD8+5;
+sbit SMOD1 = 0xD8+7;
 sfr ACC    = 0xE0;
 sfr EIE    = 0xE8; // EIE Bit Values differ from Reg320
-         /*  EIE  */
-         sbit EUSB    = 0xE8+0;
-         sbit EI2C    = 0xE8+1;
-         sbit EIEX4   = 0xE8+2;
-         sbit EIEX5   = 0xE8+3;
-         sbit EIEX6   = 0xE8+4;
+/*  EIE  */
+sbit EUSB    = 0xE8+0;
+sbit EI2C    = 0xE8+1;
+sbit EIEX4   = 0xE8+2;
+sbit EIEX5   = 0xE8+3;
+sbit EIEX6   = 0xE8+4;
 sfr B      = 0xF0;
 sfr EIP    = 0xF8; // EIP Bit Values differ from Reg320
-         /*  EIP  */
-         sbit PUSB    = 0xF8+0;
-         sbit PI2C    = 0xF8+1;
-         sbit EIPX4   = 0xF8+2;
-         sbit EIPX5   = 0xF8+3;
-         sbit EIPX6   = 0xF8+4;
+/*  EIP  */
+sbit PUSB    = 0xF8+0;
+sbit PI2C    = 0xF8+1;
+sbit EIPX4   = 0xF8+2;
+sbit EIPX5   = 0xF8+3;
+sbit EIPX6   = 0xF8+4;
 
 /*-----------------------------------------------------------------------------
    Bit Masks
@@ -673,7 +673,7 @@ sfr EIP    = 0xF8; // EIP Bit Values differ from Reg320
 #define bmWORDWIDE   bmBIT0
 
 /* Chip Revision Control Bits (REVCTL) - used to ebable/disable revision specidic
-   features */ 
+   features */
 #define bmNOAUTOARM    bmBIT1
 #define bmSKIPCOMMIT   bmBIT0
 

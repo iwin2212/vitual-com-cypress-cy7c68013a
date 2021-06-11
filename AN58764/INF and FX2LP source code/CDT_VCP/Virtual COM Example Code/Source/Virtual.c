@@ -1,469 +1,460 @@
+/*
+This implements a virtual comport as cypress device.
+CDC = USB Communication Device Class.
+
+In order to be considered a COM port, the USB device declares 2 interfaces:
+�     Abstract Control Model Communication, with 1 Interrupt IN endpoint, we use EP1IN as int.
+�     Abstract Control Model Data, with 1 Bulk IN and 1 Bulk OUT endpoint, we use EP1OUT and EP8IN as bulk.
+
+Data Interface( bulk or isochronous ):
+EP1OUT = serial transmit (from PC).  See ISR_Ep1out(void) interrupt 0
+EP8IN = serial receive (to PC)
+
+Communication Interface (setting baudrate parity...etc) for device management:
+Linecoding and control signals are supported as dummy.
+Linecontrols ar send to PC by interrupt EP1IN.
+
+RENUM = 0; The SIE engine handles all endpoint 0 controls
+RENUM = 1; The firmware handles all endpoint 0 controls
+
+*/
+
+
 #pragma NOIV               // Do not generate interrupt vectors
-//-----------------------------------------------------------------------------
-//   File:      bulkloop.c
-//   Contents:   Hooks required to implement USB peripheral function.
-//
-//   Copyright (c) 2000 Cypress Semiconductor All rights reserved
-//-----------------------------------------------------------------------------
 #include "fx2.h"
 #include "fx2regs.h"
 #include "fx2sdly.h"			// SYNCDELAY macro
-#include <stdio.h>
+
+
+// Macros: Bit operations on byte/word/long variables. Format: bset(Bit,variable). works also on SFRs(creates sbi,cbi)
+#define bset(x,y) (y |= (1 << x))
+#define bclr(x,y) (y &= (~(1 << x)))
+#define btst(x,y) (y & (1 << x))
+
 extern BOOL   GotSUD;         // Received setup data flag
 extern BOOL   Sleep;
 extern BOOL   Rwuen;
 extern BOOL   Selfpwr;
-xdata volatile unsigned char D3ON         _at_ 0x9800;
-xdata volatile unsigned char D3OFF        _at_ 0x9000;
-static int x;
-unsigned char duk;
-static int bcl, i;
+extern BYTE xdata LineCode[7] ; // the serial setup data, we dont use it
+int RxCount,RxIndex;  // RxIndex=ep1out index; RxCount = total received bytes in ep1out. receive counters
+char sbuf[32];
 
-xdata volatile unsigned char D5ON         _at_ 0xB800;
-xdata volatile unsigned char D5OFF        _at_ 0xB000;
 
-unsigned char dum;
-static int z;
+//protos:
+unsigned char receive(void);
+void transmit(unsigned char c);
+void putcc(unsigned char c);
+unsigned char getcc(void);
+void getss(unsigned char *buf);
+void putss(const unsigned char *ps);
+void mainmenue(void);
 
-extern BYTE xdata LineCode[7];
 
-BYTE   Configuration;      // Current configuration
-BYTE   AlternateSetting;   // Alternate settings
+void putcc(unsigned char c)
+{
+  transmit(c); 
+}
 
-void display_product(void);
-void TD_Poll(void);
+unsigned char getcc(void)
+{
+    unsigned char c;
+	c=receive();
+	if (c != 0xff)  putcc(c);
+    return c;
+}
+
+void getss(unsigned char *buf)
+{
+    unsigned char *ps, c;
+    ps=buf;
+    while (1)
+    {
+        c=getcc();
+        if (( c == 0x0d)||(c==0x0a)) // CR LF
+            break;
+        *ps++=c;
+    }
+    *ps=0;
+
+}
+
+void putss(const unsigned char *ps)
+{
+    while (*ps)
+    {
+        putcc(*ps++);
+    }
+}
+
+
+const char *list="\nMenue\n"
+                  "1-Xin Chao KTMT K61\n"
+                  "2-Ky Thuat Ghep Noi\n"
+                  "3-CNTT\n"
+                  ;
+
+
+/*
+called repeatedly in the main loop
+if a char is received, process it.
+this is a one char menue!
+*/
+void mainmenue(void)
+{
+unsigned char c;
+
+
+        c = getcc();
+    if ( c != 0xff) // if char was received
+	{
+        switch(c)
+        {
+        case '1': 
+            putss("\nXin Chao KTMT K61\n");
+            break;
+		case '2': 
+            putss("\nKy Thuat Ghep Noi\n");
+            break;
+		case '3': 
+            putss("\nCNTT\n");
+            break;
+
+        default:
+            putss(list);
+        }
+
+	}
+
+}
+
+/* get one byte from host
+data is in fifo, (0-64) bytes
+this routine expects that EP1OUT data has arrived in the EP1 interrupt and RxIndex and RxCount are set correctly.
+Here we just read the next byte from EP1OUT fifo.
+exit:
+char received
+0xff = nothing received
+we do not wait
+*/
+unsigned char receive(void)
+{
+    unsigned char c;
+	
+    if (!(EP1OUTCS & 0x02)) // if EP is not busy. ie. BUSY =  SIE NOT �owns� the buffer,
+    {
+
+        if(RxIndex<RxCount) // if there are bytes available in fifo
+        {
+            c=EP1OUTBUF[RxIndex]; // get it
+            RxIndex++; //advance ep1out fifo index
+			
+            return c;
+        }
+        else // nobytes left, return it for new data to arrive
+        {
+            EP1OUTBC = 0x04;// Arms EP1 endpoint. write any value to bytecount register to give back the fifo to SIE.
+        }
+    }
+            return 0xff;
+}
+
+// send data to host on EP8IN
+void transmit(unsigned char c)
+{
+	while (!(EP2468STAT & bmEP8EMPTY)); // check if EP8 is empty 
+    {
+        EP8FIFOBUF [0] = c;
+
+        EP8BCH = 0;    // endpoint bytecount H
+        SYNCDELAY;
+		EP8BCL = 1;
+        //EP8BCL = 2;  // endpoint bytecount L. this should ready the EP8 for the host to fetch.  This commits the EP for transfer.
+        SYNCDELAY;
+    }
+
+
+}
+
+
+// Called repeatedly while the device is idle
+void TD_Poll(void)
+{
+    unsigned char c;
+    // Serial State Notification that has to be sent periodically to the host
+
+    if (!(EP1INCS & 0x02))      // check if EP1IN is available
+    {
+        EP1INBUF[0] = 0x0A;       // if it is available, then fill the first 10 bytes of the buffer with
+        EP1INBUF[1] = 0x20;       // appropriate data.
+        EP1INBUF[2] = 0x00;
+        EP1INBUF[3] = 0x00;
+        EP1INBUF[4] = 0x00;
+        EP1INBUF[5] = 0x00;
+        EP1INBUF[6] = 0x00;
+        EP1INBUF[7] = 0x00;
+        EP1INBUF[8] = 0x00;
+        EP1INBUF[9] = 0x00;
+        EP1INBC = 10;            // manually commit once the buffer is filled
+    }
+
+mainmenue();
+
+    
+
+}
+
+
+
+// Called once at startup
+void DevInit(void)
+{
+
+  // enable leds
+  OEA=0x03;
+  IOA=0x03; //off
+
+// set the CPU clock to 48MHz
+    CPUCS = ((CPUCS & ~bmCLKSPD) | bmCLKSPD1) ;
+
+    // set the slave FIFO interface to 48MHz
+    IFCONFIG |= 0x40;
+    SYNCDELAY;
+    REVCTL = 0x03;
+    SYNCDELAY;
+
+
+
+    FIFORESET = 0x80; // activate NAK-ALL to avoid race conditions
+    SYNCDELAY;       // see TRM section 15.14
+    FIFORESET = 0x08; // reset, FIFO 8
+    SYNCDELAY; //
+    FIFORESET = 0x00; // deactivate NAK-ALL
+    SYNCDELAY;
+
+
+    EP1OUTCFG = 0xA0;    // Configure EP1OUT as BULK EP
+    SYNCDELAY;
+    EP1INCFG = 0xB0;     // Configure EP1IN as BULK IN EP
+    SYNCDELAY;                    // see TRM section 15.14
+    EP2CFG = 0x7F;       // Invalid EP
+    SYNCDELAY;
+    EP4CFG = 0x7F;      // Invalid EP
+    SYNCDELAY;
+    EP6CFG = 0x7F;      // Invalid EP
+    SYNCDELAY;
+
+
+
+
+    EP8CFG = 0xE0;      // Configure EP8 as BULK IN EP
+    SYNCDELAY;
+
+    EP8FIFOCFG = 0x00;  // Configure EP8 FIFO in 8-bit Manual Commit mode
+    SYNCDELAY;
+    T2CON  = 0x34;
+
+
+    EPIE |= bmBIT3 ;              // Enable EP1 OUT Endpoint interrupts to receive chars
+
+    AUTOPTRSETUP |= 0x01;         // enable dual autopointer feature
+    Rwuen = TRUE;                 // Enable remote-wakeup
+    EP1OUTBC = 0x04;
+
+
+
+
+}
+
 
 
 //-----------------------------------------------------------------------------
-// Task Dispatcher hooks
-//   The following hooks are called by the task dispatcher.
+// USB Interrupt Handlers
+//   The following functions are called by the USB interrupt jump table.
 //-----------------------------------------------------------------------------
-BOOL DR_SetConfiguration();
-
-
-BYTE TxByte0, RxByte0;
-BYTE TxByte1, RxByte1;
-
-void transmit(void)// Sends data to SBUF0 
-	{
-	if (!(EP1OUTCS & 0x02)) {
-		OEA=0x01; // port A as output
-		if (i < bcl) {
-			SBUF0 = EP1OUTBUF[i];
-			IOA = EP1OUTBUF[i];
-			i++;
-			dum = D5ON;
-			z ^= 1;
-			if (z) {
-				dum = D5OFF;
-				IE &= ~0x08;
-				}
-			}
-		else {
-			EP1OUTBC = 0x04;// Arms EP1 endpoint
-			}
-		}
-	}
-
-
-void  Serial0Init() // serial UART 0 with Timer 2 in mode 1 or high speed baud rate generator
-	{
-
-	SCON0 = 0x5A;		    //	Set Serial Mode = 1, Recieve enable bit = 1
-	T2CON = 0x34;		    //	Int1 is detected on falling edge, Enable Timer0, Set Timer overflow Flag
-
-	if ((LineCode[0] == 0x60) && (LineCode[1] == 0x09))	  // 2400
 
-		{
-		RCAP2H = 0xFD;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0x90;  		//	baud rate is set to 2400 baud
-		}
-	else if ((LineCode[0] == 0xC0) && (LineCode[1] == 0x12))	  // 4800
-
-		{
-		RCAP2H = 0xFE;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0xC8;  		//	baud rate is set to 4800 baud
-		}
-	else if ((LineCode[0] == 0x80) && (LineCode[1] == 0x25))	  // 9600
-
-		{
-		RCAP2H = 0xFF;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0x64;  		//	baud rate is set to 9600 baud
-		}
-	else if ((LineCode[0] == 0x00) && (LineCode[1] == 0x4B))	  // 19200
-
-		{
-		RCAP2H = 0xFF;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0xB2;  		//	baud rate is set to 19200 baud
-		}
-	else if ((LineCode[0] == 0x80) && (LineCode[1] == 0x70))	  // 28800
-
-		{
-		RCAP2H = 0xFF;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0xCC;  		//	baud rate is set to 28800 baud
-		}
-	else if ((LineCode[0] == 0x00) && (LineCode[1] == 0x96))	  // 38400
-
-		{
-		RCAP2H = 0xFF;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0xD9;  		//	baud rate is set to 38400 baud
-		}
-	else if ((LineCode[0] == 0x00) && (LineCode[1] == 0xE1))	  // 57600
-
-		{
-		RCAP2H = 0xFF;	     	//  Set TH2 value for timer2 
-		RCAP2L = 0xE6;  		//	baud rate is set to 57600 baud
-		}
-
-	else //if ((LineCode[0] == 0x21) && (LineCode[1] == 0x20 ))	  // 115200 (LineCode[0] == 0x00) && (LineCode[1] == 0xC2 ))
-
-		{
-		RCAP2L = 0xF3;
-		RCAP2H = 0xFF;
-		}
-
-	TH2 = RCAP2H;		//  Upper 8 bit of 16 bit counter to FF
-	TL2 = RCAP2L;		//  value of the lower 8 bits of timer set to baud rate
-	}
-
-
-
-
-void TD_Init(void)             // Called once at startup
-	{
-	// set the CPU clock to 48MHz
-	CPUCS = ((CPUCS & ~bmCLKSPD) | bmCLKSPD1);
-
-	// set the slave FIFO interface to 48MHz
-	IFCONFIG |= 0x40;
-	SYNCDELAY;
-	REVCTL = 0x03;
-	SYNCDELAY;
-
-
-	FIFORESET = 0x80; // activate NAK-ALL to avoid race conditions
-	SYNCDELAY;       // see TRM section 15.14
-	FIFORESET = 0x08; // reset, FIFO 8
-	SYNCDELAY; //
-	FIFORESET = 0x00; // deactivate NAK-ALL
-	SYNCDELAY;
-
-
-	EP1OUTCFG = 0xA0;    // Configure EP1OUT as BULK EP
-	SYNCDELAY;
-	EP1INCFG = 0xB0;     // Configure EP1IN as BULK IN EP
-	SYNCDELAY;                    // see TRM section 15.14
-	EP2CFG = 0x7F;       // Invalid EP
-	SYNCDELAY;
-	EP4CFG = 0x7F;      // Invalid EP
-	SYNCDELAY;
-	EP6CFG = 0x7F;      // Invalid EP
-	SYNCDELAY;
-
-
-
-
-	EP8CFG = 0xE0;      // Configure EP8 as BULK IN EP
-	SYNCDELAY;
-
-	EP8FIFOCFG = 0x00;  // Configure EP8 FIFO in 8-bit Manual Commit mode
-	SYNCDELAY;
-	T2CON = 0x34;
-
-
-	EPIE |= bmBIT3;              // Enable EP1 OUT Endpoint interrupts
-
-	AUTOPTRSETUP |= 0x01;         // enable dual autopointer feature
-	Rwuen = TRUE;                 // Enable remote-wakeup
-	EP1OUTBC = 0x04;
-
-	ES0 = 1; /* enable serial interrupts */
-	PS0 = 0; /* set serial interrupts to low priority */
-
-	TI = 1; /* clear transmit interrupt */
-	RI = 0; /* clear receiver interrupt */
-	EA = 1; /* Enable Interrupts */
-
-	Serial0Init();      // Initialize the Serial Port 0 for the Communication	 SCO
-
-	}
-
-void TD_Poll(void)             // Called repeatedly while the device is idle
-	{
-
-	  // Serial State Notification that has to be sent periodically to the host
-
-	if (!(EP1INCS & 0x02))      // check if EP1IN is available
-		{
-		EP1INBUF[0] = 0x0A;       // if it is available, then fill the first 10 bytes of the buffer with 
-		EP1INBUF[1] = 0x20;       // appropriate data. 
-		EP1INBUF[2] = 0x00;
-		EP1INBUF[3] = 0x00;
-		EP1INBUF[4] = 0x00;
-		EP1INBUF[5] = 0x00;
-		EP1INBUF[6] = 0x00;
-		EP1INBUF[7] = 0x02;
-		EP1INBUF[8] = 0x00;
-		EP1INBUF[9] = 0x00;
-		EP1INBC = 10;            // manually commit once the buffer is filled
-		}
-
-
-	// recieving the data from the USB Host and send it out through UART
-	// transmit();
-
-	// recieve the data from UART and send it out to the USB Host
-
-
-
-	}
-
-	BOOL TD_Suspend(void)          // Called before the device goes into suspend mode
-		{
-		return(TRUE);
-		}
-
-	BOOL TD_Resume(void)          // Called after the device resumes
-		{
-		return(TRUE);
-		}
-
-		//-----------------------------------------------------------------------------
-		// Device Request hooks
-		//   The following hooks are called by the end point 0 device request parser.
-		//-----------------------------------------------------------------------------
-
-	BOOL DR_GetDescriptor(void) {
-		return(TRUE);
-		}
-
-	BOOL DR_SetConfiguration(void)   // Called when a Set Configuration command is received
-		{
-		Configuration = SETUPDAT[2];
-		return(TRUE);            // Handled by user code
-		}
-
-	BOOL DR_GetConfiguration(void)   // Called when a Get Configuration command is received
-		{
-		EP0BUF[0] = Configuration;
-		EP0BCH = 0;
-		EP0BCL = 1;
-		return(TRUE);            // Handled by user code
-		}
-
-	BOOL DR_SetInterface(void)       // Called when a Set Interface command is received
-		{
-		AlternateSetting = SETUPDAT[2];
-		return(TRUE);            // Handled by user code
-		}
-
-	BOOL DR_GetInterface(void)       // Called when a Set Interface command is received
-		{
-		EP0BUF[0] = AlternateSetting;
-		EP0BCH = 0;
-		EP0BCL = 1;
-		return(TRUE);            // Handled by user code
-		}
-
-	BOOL DR_GetStatus(void) {
-		return(TRUE);
-		}
-
-	BOOL DR_ClearFeature(void) {
-		return(TRUE);
-		}
-
-	BOOL DR_SetFeature(void) {
-		return(TRUE);
-		}
-
-	BOOL DR_VendorCmnd(void) {
-		return(TRUE);
-		}
-
-		//-----------------------------------------------------------------------------
-		// USB Interrupt Handlers
-		//   The following functions are called by the USB interrupt jump table.
-		//-----------------------------------------------------------------------------
-
-		// Setup Data Available Interrupt Handler
-
-
-	void ISR_Sudav(void) interrupt 0
-		{
-
-		GotSUD = TRUE;            // Set flag
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmSUDAV;         // Clear SUDAV IRQ
-		}
-
-		// Setup Token Interrupt Handler
-	void ISR_Sutok(void) interrupt 0
-		{
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmSUTOK;         // Clear SUTOK IRQ
-		}
-
-	void ISR_Sof(void) interrupt 0
-		{
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmSOF;            // Clear SOF IRQ
-		}
-
-	void ISR_Ures(void) interrupt 0
-		{
-		if (EZUSB_HIGHSPEED()) {
-			pConfigDscr = pHighSpeedConfigDscr;
-			pOtherConfigDscr = pFullSpeedConfigDscr;
-			}
-		else {
-			pConfigDscr = pFullSpeedConfigDscr;
-			pOtherConfigDscr = pHighSpeedConfigDscr;
-			}
-
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmURES;         // Clear URES IRQ
-		}
-
-	void ISR_Susp(void) interrupt 0
-		{
-		Sleep = TRUE;
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmSUSP;
-
-		}
-
-	void ISR_Highspeed(void) interrupt 0
-		{
-		if (EZUSB_HIGHSPEED()) {
-			pConfigDscr = pHighSpeedConfigDscr;
-			pOtherConfigDscr = pFullSpeedConfigDscr;
-			}
-		else {
-			pConfigDscr = pFullSpeedConfigDscr;
-			pOtherConfigDscr = pHighSpeedConfigDscr;
-			}
-
-		EZUSB_IRQ_CLEAR();
-		USBIRQ = bmHSGRANT;
-		}
-	void ISR_Ep0ack(void) interrupt 0
-		{
-		}
-	void ISR_Stub(void) interrupt 0
-		{
-		}
-	void ISR_Ep0in(void) interrupt 0
-		{
-		}
-	void ISR_Ep0out(void) interrupt 0
-		{
-
-
-		}
-	void ISR_Ep1in(void) interrupt 0
-		{
-		}
-	void ISR_Ep1out(void) interrupt 0// Places first byte of EP1 OUT buffer in SBUF0
-		{
-		EZUSB_IRQ_CLEAR();		//Clears the USB interrupt
-		EPIRQ = bmBIT3;			//Clears EP1 OUT interrupt request 
-		while (TI == 1);
-
-		i = 0;
-		bcl = EP1OUTBC;
-		SBUF0 = EP1OUTBUF[i];
-		i++;
-
-		}
-	void ISR_Ep2inout(void) interrupt 0
-		{
-		}
-	void ISR_Ep4inout(void) interrupt 0
-		{
-
-		}
-	void ISR_Ep6inout(void) interrupt 0
-		{
-		}
-	void ISR_Ep8inout(void) interrupt 0
-		{
-		}
-	void ISR_Ibn(void) interrupt 0
-		{
-		}
-	void ISR_Ep0pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Ep1pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Ep2pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Ep4pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Ep6pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Ep8pingnak(void) interrupt 0
-		{
-		}
-	void ISR_Errorlimit(void) interrupt 0
-		{
-		}
-	void ISR_Ep2piderror(void) interrupt 0
-		{
-		}
-	void ISR_Ep4piderror(void) interrupt 0
-		{
-		}
-	void ISR_Ep6piderror(void) interrupt 0
-		{
-		}
-	void ISR_Ep8piderror(void) interrupt 0
-		{
-		}
-	void ISR_Ep2pflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep4pflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep6pflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep8pflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep2eflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep4eflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep6eflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep8eflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep2fflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep4fflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep6fflag(void) interrupt 0
-		{
-		}
-	void ISR_Ep8fflag(void) interrupt 0
-		{
-		}
-	void ISR_GpifComplete(void) interrupt 0
-		{
-		}
-	void ISR_GpifWaveform(void) interrupt 0
-		{
-		}
+// host sent data on EP1OUT
+void ISR_Ep1out(void) interrupt 0
+{
+    EZUSB_IRQ_CLEAR();		//Clears the USB interrupt
+    EPIRQ = bmBIT3;			//Clears EP1 OUT interrupt request
+
+    RxIndex=0; // set index to 0
+    RxCount=EP1OUTBC; // amount of received bytes
+
+}
+
+void ISR_Sudav(void) interrupt 0
+{
+
+    GotSUD = TRUE;            // Set flag
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmSUDAV;         // Clear SUDAV IRQ
+}
+
+// Setup Token Interrupt Handler
+void ISR_Sutok(void) interrupt 0
+{
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmSUTOK;         // Clear SUTOK IRQ
+}
+
+void ISR_Sof(void) interrupt 0
+{
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmSOF;            // Clear SOF IRQ
+}
+
+void ISR_Ures(void) interrupt 0
+{
+    if (EZUSB_HIGHSPEED())
+    {
+        pConfigDscr = pHighSpeedConfigDscr;
+        pOtherConfigDscr = pFullSpeedConfigDscr;
+    }
+    else
+    {
+        pConfigDscr = pFullSpeedConfigDscr;
+        pOtherConfigDscr = pHighSpeedConfigDscr;
+    }
+
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmURES;         // Clear URES IRQ
+}
+
+void ISR_Susp(void) interrupt 0
+{
+    Sleep = TRUE;
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmSUSP;
+
+}
+
+void ISR_Highspeed(void) interrupt 0
+{
+    if (EZUSB_HIGHSPEED())
+    {
+        pConfigDscr = pHighSpeedConfigDscr;
+        pOtherConfigDscr = pFullSpeedConfigDscr;
+    }
+    else
+    {
+        pConfigDscr = pFullSpeedConfigDscr;
+        pOtherConfigDscr = pHighSpeedConfigDscr;
+    }
+
+    EZUSB_IRQ_CLEAR();
+    USBIRQ = bmHSGRANT;
+}
+
+
+
+
+void ISR_Ep0ack(void) interrupt 0
+{
+}
+void ISR_Stub(void) interrupt 0
+{
+}
+void ISR_Ep0in(void) interrupt 0
+{
+}
+void ISR_Ep0out(void) interrupt 0
+{
+
+
+}
+void ISR_Ep1in(void) interrupt 0
+{
+}
+
+void ISR_Ep2inout(void) interrupt 0
+{
+}
+void ISR_Ep4inout(void) interrupt 0
+{
+
+}
+void ISR_Ep6inout(void) interrupt 0
+{
+}
+void ISR_Ep8inout(void) interrupt 0
+{
+}
+void ISR_Ibn(void) interrupt 0
+{
+}
+void ISR_Ep0pingnak(void) interrupt 0
+{
+}
+void ISR_Ep1pingnak(void) interrupt 0
+{
+}
+void ISR_Ep2pingnak(void) interrupt 0
+{
+}
+void ISR_Ep4pingnak(void) interrupt 0
+{
+}
+void ISR_Ep6pingnak(void) interrupt 0
+{
+}
+void ISR_Ep8pingnak(void) interrupt 0
+{
+}
+void ISR_Errorlimit(void) interrupt 0
+{
+}
+void ISR_Ep2piderror(void) interrupt 0
+{
+}
+void ISR_Ep4piderror(void) interrupt 0
+{
+}
+void ISR_Ep6piderror(void) interrupt 0
+{
+}
+void ISR_Ep8piderror(void) interrupt 0
+{
+}
+void ISR_Ep2pflag(void) interrupt 0
+{
+}
+void ISR_Ep4pflag(void) interrupt 0
+{
+}
+void ISR_Ep6pflag(void) interrupt 0
+{
+}
+void ISR_Ep8pflag(void) interrupt 0
+{
+}
+void ISR_Ep2eflag(void) interrupt 0
+{
+}
+void ISR_Ep4eflag(void) interrupt 0
+{
+}
+void ISR_Ep6eflag(void) interrupt 0
+{
+}
+void ISR_Ep8eflag(void) interrupt 0
+{
+}
+void ISR_Ep2fflag(void) interrupt 0
+{
+}
+void ISR_Ep4fflag(void) interrupt 0
+{
+}
+void ISR_Ep6fflag(void) interrupt 0
+{
+}
+void ISR_Ep8fflag(void) interrupt 0
+{
+}
+void ISR_GpifComplete(void) interrupt 0
+{
+}
+void ISR_GpifWaveform(void) interrupt 0
+{
+}

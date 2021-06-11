@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 //   File:      fx2sdly.h
 //   Contents:  EZ-USB FX2 Synchronization Delay (SYNCDELAY) Macro
-//				
+//
 //	 Enter with _IFREQ = IFCLK in kHz
 //	 Enter with _CFREQ = CLKOUT in kHz
 //
@@ -9,25 +9,25 @@
 //-----------------------------------------------------------------------------
 #include "intrins.h"
 
-  // Registers which require a synchronization delay, see section 15.14
-  // FIFORESET        FIFOPINPOLAR
-  // INPKTEND         OUTPKTEND
-  // EPxBCH:L         REVCTL
-  // GPIFTCB3         GPIFTCB2
-  // GPIFTCB1         GPIFTCB0
-  // EPxFIFOPFH:L     EPxAUTOINLENH:L
-  // EPxFIFOCFG       EPxGPIFFLGSEL
-  // PINFLAGSxx       EPxFIFOIRQ
-  // EPxFIFOIE        GPIFIRQ
-  // GPIFIE           GPIFADRH:L
-  // UDMACRCH:L       EPxGPIFTRIG
-  // GPIFTRIG
-  
-  // Note: The pre-REVE EPxGPIFTCH/L register are affected, as well...
-  //      ...these have been replaced by GPIFTC[B3:B0] registers
+// Registers which require a synchronization delay, see section 15.14
+// FIFORESET        FIFOPINPOLAR
+// INPKTEND         OUTPKTEND
+// EPxBCH:L         REVCTL
+// GPIFTCB3         GPIFTCB2
+// GPIFTCB1         GPIFTCB0
+// EPxFIFOPFH:L     EPxAUTOINLENH:L
+// EPxFIFOCFG       EPxGPIFFLGSEL
+// PINFLAGSxx       EPxFIFOIRQ
+// EPxFIFOIE        GPIFIRQ
+// GPIFIE           GPIFADRH:L
+// UDMACRCH:L       EPxGPIFTRIG
+// GPIFTRIG
+
+// Note: The pre-REVE EPxGPIFTCH/L register are affected, as well...
+//      ...these have been replaced by GPIFTC[B3:B0] registers
 
 // _IFREQ can be in the range of: 5000 to 48000
-#ifndef _IFREQ 
+#ifndef _IFREQ
 #define _IFREQ 48000   // IFCLK frequency in kHz
 #endif
 
@@ -67,7 +67,7 @@
 #if( _SCYCL == 3 )
 #define SYNCDELAY _nop_( ); \
                   _nop_( ); \
-                  _nop_( ) 
+                  _nop_( )
 #endif
 
 #if( _SCYCL == 4 )

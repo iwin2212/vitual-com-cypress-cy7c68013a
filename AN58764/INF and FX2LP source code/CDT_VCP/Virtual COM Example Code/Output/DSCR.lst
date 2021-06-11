@@ -1,10 +1,10 @@
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     1
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     1
 
 
-MACRO ASSEMBLER A51 V8.2.7.0
+MACRO ASSEMBLER A51 V7.08a
 OBJECT MODULE PLACED IN .\Output\DSCR.obj
-ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE Source\DSCR.A51 SET(SMALL) DEBUG PRINT(.\Output\DSCR.lst) OBJECT(.\Outp
-                      ut\DSCR.obj) EP
+ASSEMBLER INVOKED BY: C:\Keil\C51\BIN\A51.EXE Source\DSCR.A51 SET(SMALL) DEBUG PRINT(.\Output\DSCR.lst) OBJECT(.\Output\
+                      DSCR.obj) EP
 
 LOC  OBJ            LINE     SOURCE
 
@@ -21,7 +21,8 @@ LOC  OBJ            LINE     SOURCE
   0003                10     DSCR_STRING   equ   3                                           ;; Descriptor type: String
   0004                11     DSCR_INTRFC   equ   4                                           ;; Descriptor type: Interfa
                              ce
-  0005                12     DSCR_ENDPNT   equ   5                                           ;; Descriptor type: Endpoint
+  0005                12     DSCR_ENDPNT   equ   5                                           ;; Descriptor type: Endpoin
+                             t
   0006                13     DSCR_DEVQUAL  equ   6                                           ;; Descriptor type: Device 
                              Qualifier
                       14     
@@ -60,13 +61,14 @@ LOC  OBJ            LINE     SOURCE
 000A 1747             44           dw   1747H                                                ;; Product ID (Sample Devic
                              e)
 000C 0000             45           dw   0000H                                                ;; Product version ID
-000E 01               46           db   1                                                    ;; Manufacturer string index
+000E 01               46           db   1                                                    ;; Manufacturer string inde
+                             x
 000F 02               47           db   2                                                    ;; Product string index
 0010 00               48           db   0                                                    ;; Serial number string ind
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     2
+
                              ex
 0011 01               49           db   1                                                    ;; Number of configurations
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     2
-
                       50     
 0012                  51     DeviceQualDscr:
 0012 0A               52           db   DSCR_DEVQUAL_LEN                                     ;; Descriptor length
@@ -118,7 +120,8 @@ LOC  OBJ            LINE     SOURCE
 0031 1001             88           dw   1001H                                                ;; bcdCDC
                       89     
                       90                                                                     
-                      91                                                                     ;; ACM Functional Descriptor
+                      91                                                                     ;; ACM Functional Descripto
+                             r
 0033 04               92           db   04H                                                  ;; Descriptor Size in Bytes
                               (5)
 0034 24               93           db   24H                                                  ;; CS_Interface
@@ -130,11 +133,11 @@ LOC  OBJ            LINE     SOURCE
                              tor
 0037 05               98           db   05H                                                  ;; Descriptor Size in Bytes
                               (5)
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     3
+
 0038 24               99           db   24H                                                  ;; CS_Interface
 0039 06              100           db   06H                                                  ;; Union Functional Descrip
                              tor
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     3
-
 003A 00              101           db   00H                                                  ;; bMasterInterface
 003B 01              102           db   01H                                                  ;; bSlaveInterface0
                      103     
@@ -152,7 +155,8 @@ LOC  OBJ            LINE     SOURCE
 0043 81              114           db   81H                                                  ;; Endpoint number, and dir
                              ection
 0044 03              115           db   ET_INT                                               ;; Endpoint type
-0045 10              116           db   10H                                                  ;; Maximum packet size (LSB)
+0045 10              116           db   10H                                                  ;; Maximum packet size (LSB
+                             )
 0046 00              117           db   00H                                                  ;; Max packet size (MSB)
 0047 02              118           db   02H                                                  ;; Polling interval
                      119     
@@ -178,7 +182,8 @@ LOC  OBJ            LINE     SOURCE
 0053 88              135           db   88H                                                  ;; Endpoint number, and dir
                              ection
 0054 02              136           db   ET_BULK                                              ;; Endpoint type
-0055 00              137           db   00H                                                  ;; Maximum packet size (LSB)
+0055 00              137           db   00H                                                  ;; Maximum packet size (LSB
+                             )
 0056 02              138           db   02H                                                  ;; Max packet size (MSB)
 0057 00              139           db   00H                                                  ;; Polling interval
                      140     
@@ -188,21 +193,22 @@ LOC  OBJ            LINE     SOURCE
 005A 01              144           db   01H                                                  ;; Endpoint number, and dir
                              ection
 005B 02              145           db   ET_BULK                                              ;; Endpoint type
-005C 40              146           db   40H                                                  ;; Maximum packet size (LSB)
+005C 40              146           db   40H                                                  ;; Maximum packet size (LSB
+                             )
 005D 00              147           db   00H                                                  ;; Max packet size (MSB)
 005E 00              148           db   00H                                                  ;; Polling interval
                      149     
                      150     
 005F                 151     HighSpeedConfigDscrEnd:   
                      152     
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     4
+
 005F                 153     FullSpeedConfigDscr:   
 005F 09              154           db   DSCR_CONFIG_LEN               ;; Descriptor length
 0060 02              155           db   DSCR_CONFIG                  ;; Descriptor type
 0061 43              156           db   (FullSpeedConfigDscrEnd-FullSpeedConfigDscr) mod 256 ;; Total Length (LSB)
 0062 00              157           db   (FullSpeedConfigDscrEnd-FullSpeedConfigDscr)  /  256 ;; Total Length (MSB)
 0063 02              158           db   2                                                    ;; Number of interfaces
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     4
-
 0064 01              159           db   1                                                    ;; Configuration number
 0065 00              160           db   0                                                    ;; Configuration string
 0066 A0              161           db   10100000b                                            ;; Attributes (b7 - buspwr,
@@ -234,7 +240,8 @@ LOC  OBJ            LINE     SOURCE
 0074 1001            180           dw   1001H                                                ;; bcdCDC
                      181     
                      182                                                                     
-                     183                                                                     ;; ACM Functional Descriptor
+                     183                                                                     ;; ACM Functional Descripto
+                             r
 0076 04              184           db   04H                                                  ;; Descriptor Size in Bytes
                               (5)
 0077 24              185           db   24H                                                  ;; CS_Interface
@@ -262,15 +269,16 @@ LOC  OBJ            LINE     SOURCE
 0083 01              202           db   01H                                                  ;; bDataInterface
                      203     
                      204                                                                     ;; EP1 Descriptor
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     5
+
 0084 07              205           db   DSCR_ENDPNT_LEN                                      ;; Descriptor length
 0085 05              206           db   DSCR_ENDPNT                                          ;; Descriptor type
 0086 81              207           db   81H                                                  ;; Endpoint number, and dir
                              ection
 0087 03              208           db   ET_INT                                               ;; Endpoint type
-0088 10              209           db   10H                                                  ;; Maximum packet size (LSB)
+0088 10              209           db   10H                                                  ;; Maximum packet size (LSB
+                             )
 0089 00              210           db   00H                                                  ;; Max packet size (MSB)
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     5
-
 008A 01              211           db   01H                                                  ;; Polling interval
                      212     
                      213                                                                    
@@ -295,7 +303,8 @@ LOC  OBJ            LINE     SOURCE
 0096 01              229           db   01H                                                  ;; Endpoint number, and dir
                              ection
 0097 02              230           db   ET_BULK                                              ;; Endpoint type
-0098 40              231           db   40H                                                  ;; Maximum packet size (LSB)
+0098 40              231           db   40H                                                  ;; Maximum packet size (LSB
+                             )
 0099 00              232           db   00H                                                  ;; Max packet size (MSB)
 009A 00              233           db   00H                                                  ;; Polling interval
                      234     
@@ -305,7 +314,8 @@ LOC  OBJ            LINE     SOURCE
 009D 88              238           db   88H                                                  ;; Endpoint number, and dir
                              ection
 009E 02              239           db   ET_BULK                                              ;; Endpoint type
-009F 00              240           db   00H                                                  ;; Maximum packet size (LSB)
+009F 00              240           db   00H                                                  ;; Maximum packet size (LSB
+                             )
 00A0 02              241           db   02H                                                  ;; Max packet size (MSB)
 00A1 00              242           db   00H                                                  ;; Polling interval
                      243     
@@ -327,6 +337,8 @@ LOC  OBJ            LINE     SOURCE
 00AA 7900            259           db   'y',00
 00AC 7000            260           db   'p',00
 00AE 7200            261           db   'r',00
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     6
+
 00B0 6500            262           db   'e',00
 00B2 7300            263           db   's',00
 00B4 7300            264           db   's',00
@@ -337,8 +349,6 @@ LOC  OBJ            LINE     SOURCE
 00B7 03              269           db   DSCR_STRING
 00B8 4500            270           db   'E',00
 00BA 5A00            271           db   'Z',00
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     6
-
 00BC 2D00            272           db   '-',00
 00BE 5500            273           db   'U',00
 00C0 5300            274           db   'S',00
@@ -372,7 +382,7 @@ LOC  OBJ            LINE     SOURCE
 00EE 0000            302           dw   0000H
                      303           end
                                    
-A51 MACRO ASSEMBLER  DSCR                                                                 06/09/2021 17:25:21 PAGE     7
+A51 MACRO ASSEMBLER  DSCR                                                                 06/10/2021 17:00:31 PAGE     7
 
 SYMBOL TABLE LISTING
 ------ ----- -------
